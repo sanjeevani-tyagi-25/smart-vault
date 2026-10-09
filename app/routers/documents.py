@@ -2,14 +2,14 @@ import json
 import os
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status, Response
 from sqlalchemy.orm import Session
 
 from app.config import STORAGE_PATH, TEMP_PATH
 from app.database import get_db
 from app.models import User, Asset, Document
-from app.schemas import DocumentOut
+from app.schemas import DocumentOut, DocumentUpdate
 from app.auth import get_current_user
 from app.crypto import encrypt_bytes, decrypt_bytes
 from app.audit import log_audit
@@ -238,6 +238,66 @@ async def upload_document_alias(
         current_user=current_user,
         db=db,
     )
+
+
+@router.get("", response_model=List[DocumentOut])
+def list_documents(
+    asset_id: Optional[int] = None,
+    doc_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List documents for the authenticated user, optionally filtered by asset or doc_type."""
+    query = db.query(Document).filter(Document.user_id == current_user.id)
+    if asset_id is not None:
+        query = query.filter(Document.asset_id == asset_id)
+    if doc_type:
+        query = query.filter(Document.doc_type == doc_type)
+    docs = query.order_by(Document.created_at.desc()).all()
+    return [serialize_doc(d) for d in docs]
+
+
+@router.patch("/{document_id}", response_model=DocumentOut)
+def update_document(
+    document_id: int,
+    doc_update: DocumentUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update document metadata (title, doc_type, expiry_date, issue_date, asset association, shareable status)."""
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if doc_update.asset_id is not None and doc_update.asset_id != doc.asset_id:
+        target_asset = db.query(Asset).filter(Asset.id == doc_update.asset_id, Asset.user_id == current_user.id).first()
+        if not target_asset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target asset not found")
+        doc.asset_id = doc_update.asset_id
+
+    if doc_update.title is not None:
+        doc.title = doc_update.title.strip()
+    if doc_update.doc_type is not None:
+        doc.doc_type = doc_update.doc_type.strip()
+    if doc_update.issue_date is not None:
+        doc.issue_date = doc_update.issue_date.strip() if doc_update.issue_date.strip() not in ("null", "None", "") else None
+    if doc_update.expiry_date is not None:
+        doc.expiry_date = doc_update.expiry_date.strip() if doc_update.expiry_date.strip() not in ("null", "None", "") else None
+    if doc_update.is_emergency_shareable is not None:
+        doc.is_emergency_shareable = doc_update.is_emergency_shareable
+
+    db.commit()
+    db.refresh(doc)
+
+    log_audit(
+        db=db,
+        owner_id=current_user.id,
+        actor_name=current_user.name,
+        action="DOCUMENT_UPDATE",
+        target=f"Updated metadata for {doc.title}",
+    )
+
+    return serialize_doc(doc)
 
 
 @router.patch("/{document_id}/toggle-shareable", response_model=DocumentOut)

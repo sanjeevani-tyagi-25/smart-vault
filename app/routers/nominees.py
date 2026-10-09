@@ -226,6 +226,37 @@ def veto_access_request(
     return serialize_access_request(req)
 
 
+@router.post("/access-requests/{request_id}/approve", response_model=AccessRequestOut)
+def approve_access_request(
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Owner explicitly approves emergency access immediately without waiting for countdown."""
+    req = db.query(AccessRequest).filter(AccessRequest.id == request_id, AccessRequest.owner_id == current_user.id).first()
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access request not found")
+
+    if req.status != "pending":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Cannot approve a request with status '{req.status}'")
+
+    req.status = "approved"
+    req.resolved_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(req)
+
+    log_audit(
+        db=db,
+        owner_id=current_user.id,
+        actor_name=current_user.name,
+        action="OWNER_APPROVE_EMERGENCY_ACCESS",
+        target=f"Approved emergency access request #{req.id} for {req.nominee.name if req.nominee else req.nominee_id}",
+    )
+
+    return serialize_access_request(req)
+
+
+
 # --- Controlled Nominee View ---
 @router.get("/nominee/documents", response_model=List[DocumentOut])
 def get_nominee_accessible_documents(

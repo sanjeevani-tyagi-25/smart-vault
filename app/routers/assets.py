@@ -30,6 +30,7 @@ def serialize_doc(doc: Document) -> DocumentOut:
         expiry_date=doc.expiry_date,
         is_emergency_shareable=getattr(doc, "is_emergency_shareable", True),
         created_at=doc.created_at,
+        asset_name=doc.asset.name if getattr(doc, "asset", None) else None,
     )
 
 

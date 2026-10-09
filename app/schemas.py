@@ -64,8 +64,19 @@ class DocumentOut(BaseModel):
     expiry_date: Optional[str] = None
     is_emergency_shareable: bool = True
     created_at: datetime
+    asset_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    doc_type: Optional[str] = None
+    asset_id: Optional[int] = None
+    issue_date: Optional[str] = None
+    expiry_date: Optional[str] = None
+    is_emergency_shareable: Optional[bool] = None
+
 
 
 class AssetDetailOut(BaseModel):

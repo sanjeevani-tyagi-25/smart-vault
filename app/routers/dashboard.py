@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Asset, Document, Nominee
+from app.models import User, Asset, Document, Nominee, AuditLog
+from app.schemas import AuditLogOut
 from app.auth import get_current_user
 from app.checklist import get_checklist_for_asset, get_missing_for_asset
 
@@ -187,6 +188,19 @@ def get_dashboard(
 
     readiness_score = min(100, completeness_score + expiry_score + nominee_score)
 
+    expiring_soon_count = sum(1 for a in alerts if a["severity"] in ("urgent", "soon"))
+    expired_count = sum(1 for a in alerts if a["severity"] == "expired")
+    missing_count = sum(a["missing_count"] for a in assets_summary)
+
+    recent_logs = (
+        db.query(AuditLog)
+        .filter(AuditLog.owner_id == current_user.id)
+        .order_by(AuditLog.timestamp.desc())
+        .limit(6)
+        .all()
+    )
+    recent_activity = [AuditLogOut.model_validate(l).model_dump() for l in recent_logs]
+
     return {
         "readiness_score": readiness_score,
         "breakdown": {
@@ -199,4 +213,9 @@ def get_dashboard(
         "assets": assets_summary,
         "total_documents": sum(len(a.documents) for a in assets),
         "total_assets": len(assets),
+        "expiring_soon_count": expiring_soon_count,
+        "expired_count": expired_count,
+        "missing_count": missing_count,
+        "recent_activity": recent_activity,
     }
+

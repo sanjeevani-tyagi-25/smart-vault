@@ -43,6 +43,16 @@ export interface DocumentItem {
   expiry_date?: string | null;
   is_emergency_shareable: boolean;
   created_at: string;
+  asset_name?: string | null;
+}
+
+export interface DocumentUpdatePayload {
+  title?: string;
+  doc_type?: string;
+  asset_id?: number;
+  issue_date?: string | null;
+  expiry_date?: string | null;
+  is_emergency_shareable?: boolean;
 }
 
 export interface ChecklistItem {
@@ -99,6 +109,10 @@ export interface DashboardData {
   assets: Asset[];
   total_documents: number;
   total_assets: number;
+  expiring_soon_count?: number;
+  expired_count?: number;
+  missing_count?: number;
+  recent_activity?: AuditLogItem[];
 }
 
 export interface ExtractionResult {

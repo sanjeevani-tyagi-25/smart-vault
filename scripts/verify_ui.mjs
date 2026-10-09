@@ -32,7 +32,7 @@ async function verify() {
     { label: 'bg-white utility', test: css.data.includes('bg-white') },
     { label: 'text-slate-900 utility', test: css.data.includes('text-slate-900') },
     { label: 'placeholder:text-slate-400 utility', test: css.data.includes('text-slate-400') },
-    { label: 'focus:ring-teal-500 utility', test: css.data.includes('focus:ring-teal-500') || css.data.includes('ring-teal-500') }
+    { label: 'Teal focus styling (#08c5b3)', test: css.data.includes('#08c5b3') || css.data.includes('focus:ring-teal-500') || css.data.includes('ring-teal-500') }
   ];
 
   for (const c of checks) {

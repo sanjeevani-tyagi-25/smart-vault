@@ -150,3 +150,67 @@ def test_natural_language_search_and_audit():
     assert audit_resp.status_code == 200
     logs = audit_resp.json()
     assert len(logs) >= 1  # includes USER_REGISTERED
+
+
+def test_document_list_and_update_and_direct_approval():
+    """Verify listing all documents, updating metadata via PATCH, and direct owner approval."""
+    # 1. Register user
+    reg = client.post(
+        "/auth/register",
+        json={"name": "Dev User", "email": "dev@example.com", "password": "password123"},
+    ).json()
+    token = reg["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 2. Add asset and document
+    asset = client.post("/assets", json={"name": "Hyundai i20", "type": "vehicle"}, headers=headers).json()
+    doc = client.post(
+        "/documents",
+        data={
+            "asset_id": asset["id"],
+            "doc_type": "RC",
+            "title": "Old RC Title",
+            "is_emergency_shareable": "true",
+            "fields_json": "{}",
+            "confidence_json": "{}",
+        },
+        files={"file": ("rc.pdf", b"test rc content", "application/pdf")},
+        headers=headers,
+    ).json()
+
+    # 3. Test list documents
+    docs_resp = client.get("/documents", headers=headers)
+    assert docs_resp.status_code == 200
+    all_docs = docs_resp.json()
+    assert len(all_docs) == 1
+    assert all_docs[0]["asset_name"] == "Hyundai i20"
+
+    # 4. Test PATCH update document
+    patch_resp = client.patch(
+        f"/documents/{doc['id']}",
+        json={"title": "Updated RC 2026", "expiry_date": "2030-05-15"},
+        headers=headers,
+    )
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["title"] == "Updated RC 2026"
+    assert patch_resp.json()["expiry_date"] == "2030-05-15"
+
+    # 5. Add Nominee & test direct owner APPROVE
+    nom = client.post(
+        "/nominees",
+        json={"name": "Rohan Sharma", "email": "rohan@example.com", "relationship": "Brother"},
+        headers=headers,
+    ).json()
+
+    req = client.post(
+        "/access-requests",
+        json={"nominee_id": nom["id"]},
+        headers=headers,
+    ).json()
+    assert req["status"] == "pending"
+
+    # Owner explicitly approves immediately
+    appr_resp = client.post(f"/access-requests/{req['id']}/approve", headers=headers)
+    assert appr_resp.status_code == 200
+    assert appr_resp.json()["status"] == "approved"
+

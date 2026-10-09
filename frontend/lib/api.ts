@@ -4,6 +4,7 @@ import {
   DashboardData,
   Asset,
   DocumentItem,
+  DocumentUpdatePayload,
   ExtractionResult,
   SearchResponse,
   Nominee,
@@ -175,6 +176,21 @@ export async function deleteDocument(id: number): Promise<{ detail: string }> {
   });
 }
 
+export async function getDocuments(params?: { asset_id?: number; doc_type?: string }): Promise<DocumentItem[]> {
+  const query = new URLSearchParams();
+  if (params?.asset_id) query.append("asset_id", String(params.asset_id));
+  if (params?.doc_type) query.append("doc_type", params.doc_type);
+  const qStr = query.toString();
+  return apiFetch<DocumentItem[]>(`/documents${qStr ? `?${qStr}` : ""}`);
+}
+
+export async function updateDocument(id: number, payload: DocumentUpdatePayload): Promise<DocumentItem> {
+  return apiFetch<DocumentItem>(`/documents/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function toggleShareable(id: number): Promise<DocumentItem> {
   return apiFetch<DocumentItem>(`/documents/${id}/toggle-shareable`, {
     method: "PATCH",
@@ -246,6 +262,12 @@ export async function requestEmergencyAccess(nominee_id: number): Promise<Access
 
 export async function vetoAccessRequest(requestId: number): Promise<AccessRequest> {
   return apiFetch<AccessRequest>(`/access-requests/${requestId}/veto`, {
+    method: "POST",
+  });
+}
+
+export async function approveAccessRequest(requestId: number): Promise<AccessRequest> {
+  return apiFetch<AccessRequest>(`/access-requests/${requestId}/approve`, {
     method: "POST",
   });
 }

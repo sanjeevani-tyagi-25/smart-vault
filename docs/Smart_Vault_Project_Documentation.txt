@@ -1,0 +1,444 @@
+--- PAGE 1 ---
+Smart Vault | Project Documentation
+Page 1
+ SMART VAULT
+ AI-Powered Family Document & Asset Management System
+Project Documentation & Implementation Blueprint
+A practical guide to the product vision, architecture, workflows, security, implementation priorities, and demo plan.
+ Core idea: a family document autopilot — STORE, UNDERSTAND, ORGANIZE,
+ TRACK, ALERT, SEARCH, and SECURELY SHARE.
+
+
+--- PAGE 2 ---
+Smart Vault | Project Documentation
+Page 2
+1. Product Overview
+Smart Vault is an AI-powered family document and asset management system. It is designed to do more than store
+files: it connects documents to real-life assets, identifies document types, extracts important details, tracks missing
+documents and expiry dates, answers questions about stored information, and supports controlled emergency sharing.
+The product lifecycle is: STORE → UNDERSTAND → ORGANIZE → TRACK → ALERT → SEARCH → SECURELY
+SHARE.
+What makes it different?
+  Documents are organized around assets such as a vehicle, property, or family member.
+  AI extracts details from uploaded documents, but users review and confirm the information before it is saved.
+  The system compares uploaded documents with an asset-specific checklist.
+  Expiry alerts and readiness indicators help users understand what needs attention.
+  Natural-language search helps users ask questions about their own documents.
+  Emergency nominee access follows explicit rules, waiting periods, owner veto, and audit logging.
+ Important boundary: AI extraction is not official government authenticity verification. Smart Vault must not claim that a
+document is genuine unless a real, authorized verification service is integrated.
+2. Assets and Document Checklists
+Users create an asset first and upload documents gradually. They do not need to provide every document when
+creating the asset.
+Supported asset types
+  Vehicle: example — Honda City.
+  Property: example — Flat 302.
+  Person: example — Self or a family member.
+  Other: for additional asset categories.
+ 
+Example checklists
+  Honda City — Vehicle: required: RC, Insurance, PUC, Driving License.
+  Flat 302 — Property: required: Registry, Property Tax Receipt, Electricity Bill; optional: Rent Agreement.
+  Self — Person: required: Aadhaar, PAN, Health Insurance; optional: Passport.
+ The asset detail page should show required documents, uploaded documents, missing documents, and expiry status.
+The checklist should update after a document is confirmed and saved.
+3. AI Document Extraction Workflow
+Each uploaded document follows a controlled workflow:
+  Securely store the uploaded file after encryption.
+  Identify the likely document type using AI.
+  Extract fields such as document number, holder name, issue date, expiry date, issuer, and additional details.
+  Show extracted values to the user for review and editing.
+  Save the user-confirmed data and relevant metadata.
+  Compare the document against the asset checklist.
+  Update missing-document indicators, readiness, and expiry tracking.
+ 
+
+--- PAGE 3 ---
+Smart Vault | Project Documentation
+Page 3
+ Make the confirmed information available to authorized search and dashboard features.
+ 
+Supported document types
+RC, Insurance, PUC, Driving License, Registry, Property Tax Receipt, Electricity Bill, Rent Agreement, Aadhaar, PAN,
+Passport, Health Insurance, and Other.
+Extraction output fields
+ doc_type
+title
+fields:
+number
+holder_name
+issue_date
+expiry_date
+issuer
+extra
+confidence:
+type
+number
+holder
+issue_date
+expiry_date
+raw_text
+language: en | hi | mixed
+Missing values must be returned as null rather than guessed. Dates should be normalized to YYYY-MM-DD.
+Confidence values must be between 0 and 1. The workflow should handle Hindi, English, and mixed-language
+documents.
+Error handling
+  Handle fenced JSON, invalid JSON, invalid dates, invalid confidence values, AI timeouts, and API failures.
+  Retry once when the AI response is invalid; if it still fails, show a friendly error and an editable empty template.
+  Never invent dates or document details.
+ 
+4. Gemini AI and Mock Mode
+The system uses Google Gemini through the google-genai package. Configuration is read from environment
+variables such as GEMINI_API_KEY and AI_MODEL.
+A mock AI provider is required so the application can be demonstrated and tested without an API key. Set
+AI_MOCK=true to use it.
+Mock behavior
+  Simulate a short 1–1.5 second extraction delay.
+  Route sample files by filename: insurance → Insurance; puc → PUC; rc → RC; electricity → Electricity Bill; rent →
+ Rent Agreement; aadhaar → Aadhaar; pan → PAN; registry → Registry; health → Health Insurance.
+ For mock insurance, use an expiry date 12 days from the current date; for PUC, use an expiry date 25 days from the
+ current date.
+ Support a Hindi insurance sample with language set to hi.
+  For unknown filenames, return Other with low confidence.
+ Mock mode is for development and demonstration, not a substitute for validating the real AI provider.
+5. Security and Encrypted File Storage
+Files are stored locally in ./storage, but they must be encrypted before being written to disk.
+  Use AES-256-GCM with a fresh random nonce for each encryption.
+ 
+
+--- PAGE 4 ---
+Smart Vault | Project Documentation
+Page 4
+ Load the encryption key from the VAULT_KEY environment variable; never hard-code it.
+  Provide encrypt_file() and decrypt_file() functions.
+  Test that decrypting an encrypted file returns bytes identical to the original.
+  Validate file type and enforce a 10 MB maximum upload size.
+  Allow JPG, JPEG, PNG, WEBP, and PDF.
+  Verify ownership before reading, downloading, or deleting any file.
+  Use the user identity derived from the JWT for all user-scoped queries; do not trust a frontend-supplied user_id.
+ The UI may show an “AES-256 encrypted” indicator only when the actual storage path encrypts files as specified.
+Friendly errors must not reveal stack traces, API keys, raw document contents, or filesystem paths.
+6. Authentication and User Isolation
+Authentication uses email/password, bcrypt password hashing, and JWT tokens. OAuth is not required.
+Required endpoints
+  POST /auth/register — create an account.
+  POST /auth/login — authenticate and return a token.
+  GET /me — return the current authenticated user.
+ All assets, documents, search results, nominees, and audit data must be scoped to the current user. The backend must
+enforce this independently of frontend behavior.
+7. Backend Architecture and APIs
+Backend: FastAPI with Python 3.11+, SQLAlchemy, and SQLite. Suggested modules:
+ app/
+main.py
+config.py
+database.py
+models.py
+schemas.py
+auth.py
+crypto.py
+checklist.py
+audit.py
+ai/
+base.py
+gemini.py
+mock.py
+factory.py
+routers/
+auth.py
+assets.py
+documents.py
+search.py
+nominees.py
+dashboard.py
+Asset endpoints
+  GET /assets — list the current user's assets.
+  POST /assets — create an asset.
+  GET /assets/{id} — view an asset and its checklist/status.
+  DELETE /assets/{id} — delete an owned asset.
+ 
+
+--- PAGE 5 ---
+Smart Vault | Project Documentation
+Page 5
+Document endpoints
+  POST /documents/upload — upload a document.
+  GET /documents/{id} — view metadata.
+  GET /documents/{id}/file — download/decrypt an owned document.
+  DELETE /documents/{id} — delete an owned document.
+ 
+Other endpoints
+  POST /search — answer a natural-language query using only the current user's relevant document information.
+  GET /dashboard — return readiness, expiry alerts, assets, and missing-document counts.
+  Nominee and access-request endpoints are described in Section 11.
+ The root GET / endpoint should return a simple status object identifying the API as online and linking to /docs.
+Configure CORS for localhost:3000 and 127.0.0.1:3000 during local development.
+8. Database Models
+Use SQLAlchemy models with relationships and ownership checks.
+User
+id, name, email (unique), password_hash, created_at.
+Asset
+id, user_id, name, type, created_at.
+Document
+id, asset_id, user_id, doc_type, title, file_path, original_filename, mime_type, fields_json, raw_text, confidence_json,
+issue_date, expiry_date, is_emergency_shareable, created_at.
+Nominee
+id, owner_id, name, email, relationship, status (invited/active).
+AccessRequest
+id, owner_id, nominee_id, status (pending/vetoed/approved), requested_at, unlocks_at, resolved_at.
+AuditLog
+id, owner_id, actor_name, action, target, timestamp.
+9. Expiry Tracking and Renewal Links
+Expiry status is calculated from the number of days remaining:
+  Expired: fewer than 0 days remaining.
+  Urgent: 0–7 days remaining.
+  Soon: 8–30 days remaining.
+  Healthy: more than 30 days remaining.
+ Use readable labels and text in addition to color, so status is not communicated by color alone.
+Renewal links
+  Insurance: https://www.policybazaar.com/
+  PUC, RC, Driving License: https://parivahan.gov.in
+ 
+
+--- PAGE 6 ---
+Smart Vault | Project Documentation
+Page 6
+Return a null renewal URL for unsupported document types. Links are helpful destinations, not proof that renewal is
+completed.
+10. Readiness Score
+The readiness score is a weighted indicator intended to help users prioritize work. It is not a legal compliance certificate.
+  50% — Completeness: required documents present divided by total required documents.
+  30% — Expiry health: healthy documents divided by documents that have expiry dates.
+  20% — Nominee setup: no nominee = 0 points; invited nominee = 10 points; active nominee = 20 points (out of the
+ 20-point contribution).
+Return the overall score, category breakdown, next actions, estimated improvement, alerts, asset summary, and
+missing-document counts.
+Example next action: “Upload PUC for Honda City” with an estimated improvement such as +8 points. Improvement
+values should be calculated from the actual score logic rather than hard-coded.
+A document is considered healthy for the readiness calculation when it is not expired and has more than 30 days
+remaining.
+11. Natural-Language Search
+Users should be able to ask questions such as “When does my car insurance expire?” The backend retrieves relevant
+fields and text from the current user's documents and may use Gemini to formulate an answer.
+  Only use facts available in the user's stored documents.
+  Return sources with document_id, title, field, and value.
+  If the requested information is missing, explicitly say it was not found.
+  Do not invent answers or expose another user's documents.
+ The mock search should support example queries about insurance expiry, missing documents for Flat 302, and PUC
+expiry.
+12. Emergency Nominee Access
+The owner can add a trusted nominee. The nominee should not see protected documents while an access request is
+pending.
+Shareable documents
+The default is_emergency_shareable value is true for Insurance, Health Insurance, Aadhaar, RC, and Registry.
+The owner can change this setting for each document.
+Access flow
+  Nominee requests emergency access.
+  A waiting period starts. Use ACCESS_WAIT_SECONDS=60 for the demo; the intended production concept is a
+ longer period, such as 7 days.
+ The owner sees a countdown and can veto the request.
+  Before approval, the nominee sees no protected documents.
+  After the waiting period, a pending request can be lazily resolved to approved when read, unless it was vetoed.
+  After approval, the nominee sees only documents marked as emergency-shareable.
+  Nominee access is read-only: no editing, deleting, or owner-only controls.
+ 
+
+--- PAGE 7 ---
+Smart Vault | Project Documentation
+Page 7
+A “Switch to nominee view” feature must be clearly labeled as a demo-only simulation unless real nominee
+authentication and authorization are implemented.
+Required nominee endpoints
+  POST /nominees and GET /nominees.
+  POST /access-requests and GET /access-requests.
+  POST /access-requests/{id}/veto.
+  GET /audit-log.
+  GET /nominee/documents.
+ Every access decision must be enforced on the backend, not merely hidden in the interface.
+13. Audit Log
+Record significant actions so the owner can review activity.
+  Document uploaded, viewed, downloaded, and deleted.
+  Nominee added.
+  Emergency access requested, vetoed, and approved.
+  Nominee viewed a document.
+ The UI should display actor, action, target, and timestamp. Avoid logging sensitive raw document contents or encryption
+keys.
+14. Frontend and User Experience
+Frontend: Next.js App Router, TypeScript, Tailwind CSS, and lucide-react. Use a responsive, mobile-first layout.
+Pages
+  /login — registration/login experience.
+  /dashboard — readiness, expiry alerts, asset list, missing-document counts, and search.
+  /assets/[id] — asset details, checklist, documents, and expiry statuses.
+  /assets/[id]/upload — upload and extraction confirmation flow.
+  /nominees — nominee management, access requests, countdown/veto, and audit history.
+ 
+Upload experience
+Use a step indicator: select file → preview → Extract with AI → “Reading your document...” → review/edit extracted
+fields → Confirm & Save. After saving, update the checklist, readiness score, and expiry indicators.
+Visual design
+  Navy #0B1F3A, teal #14B8A6, white cards, rounded-2xl corners, soft shadows, and clean spacing.
+  Use lucide-react icons only.
+  Support a 390 px mobile viewport.
+  Include skeletons, empty states, error toasts, success feedback, clear buttons, status chips, expiry badges,
+ missing-document indicators, and a security indicator.
+ Confidence >= 0.85: green; 0.60–0.84: amber; below 0.60: red. Highlight low-confidence fields with “Please verify”.
+ Use accessible labels and do not rely on color alone to communicate errors or expiry severity.
+
+
+--- PAGE 8 ---
+Smart Vault | Project Documentation
+Page 8
+15. Frontend API Helper
+Create frontend/lib/api.ts to centralize API calls, attach the JWT token, handle friendly errors, and handle 401
+responses by redirecting to login. Never rely on frontend checks as the only security boundary.
+16. Seed Data and Sample Files
+Provide an idempotent scripts/seed.py that can safely be run more than once.
+Demo account
+Email: demo@smartvault.app
+Password: demo1234
+Seeded demo content
+  Assets: Honda City, Flat 302, and Self.
+  Five or six documents, including one expired, one expiring in 12 days, one expiring in 25 days, several healthy
+ documents, and at least one missing checklist item.
+ An active nominee, a completed past emergency-access request, audit entries, and encrypted placeholder files.
+ 
+Sample filenames
+ samples/README
+insurance_honda.jpg
+puc_honda.jpg
+rc_honda.jpg
+electricity_flat302.jpg
+rent_agreement.pdf
+hindi_insurance.jpg
+aadhaar_self.jpg
+Use synthetic sample documents only; do not place real personal identity documents or secrets in the repository.
+17. Environment Configuration
+ GEMINI_API_KEY=
+AI_MODEL=
+AI_MOCK=true
+AI_TIMEOUT_SECONDS=30
+VAULT_KEY=
+ACCESS_WAIT_SECONDS=60
+DATABASE_URL=sqlite:///./smart_vault.db
+JWT_SECRET=
+Keep real secrets in a local .env file and exclude it from Git. Commit only a safe .env.example. Generate strong random
+values for VAULT_KEY and JWT_SECRET, and document the required formats in the README.
+18. Testing Requirements
+  Registration and login.
+  Asset ownership isolation.
+  Encryption/decryption round-trip.
+  Upload/download byte equality.
+  AI JSON parsing, fenced JSON removal, invalid date handling, and confidence validation.
+  Mock AI filename routing.
+  Expiry status calculation.
+  Readiness score calculation.
+ 
+
+--- PAGE 9 ---
+Smart Vault | Project Documentation
+Page 9
+ Lazy emergency-access resolution.
+  Nominee access denied before approval and allowed after approval only for shareable documents.
+ Tests should verify backend authorization, not only frontend presentation.
+19. Error Handling and Reliability
+  Use friendly, actionable messages for validation failures, AI errors, timeouts, unsupported file types, oversized
+ uploads, and unauthorized access.
+ Do not expose stack traces, API keys, raw document contents, or filesystem details to users.
+  Keep mock mode usable without a Gemini key.
+  Ensure date parsing and score calculations are deterministic and covered by tests.
+  Make seed scripts idempotent and document known limitations.
+ 
+20. Project Setup and Run Commands
+The project should include a README with exact Windows PowerShell commands for creating the environment,
+installing dependencies, configuring .env, starting the backend and frontend, seeding data, and running tests.
+Suggested backend setup
+ # From the project root
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+# Configure .env from .env.example, then start FastAPI
+python -m uvicorn app.main:app --reload
+Suggested frontend setup
+ cd frontend
+npm install
+npm run dev
+Confirm the exact working directory and package scripts in the generated repository. The commands above are a
+baseline; the README should match the actual implementation.
+21. End-to-End Demo Flow
+  Log in using the demo account.
+  Open the dashboard and inspect readiness, expiry alerts, and missing-document counts.
+  Open Honda City and verify that RC and Insurance are present while PUC and Driving License are missing.
+  Upload samples/puc_honda.jpg.
+  Run AI extraction, review/edit the fields, and confirm/save.
+  Show that the PUC checklist state and readiness score update.
+  Ask “When does my car insurance expire?” and show the source document/field.
+  Request emergency nominee access and show the countdown and owner veto option.
+  Complete the demo waiting period and demonstrate the approved nominee view.
+  Open the audit log and show the relevant events.
+ 
+
+--- PAGE 10 ---
+Smart Vault | Project Documentation
+Page 10
+22. Implementation Priorities
+P0 — Must work first
+  Project setup, FastAPI, Next.js, SQLite, JWT registration/login.
+  Asset creation and asset-specific checklist.
+  Upload, encrypted storage, AI extraction, mock fallback, review/edit/confirm.
+  Metadata save, missing-document detection, expiry tracking, dashboard, asset detail.
+  Natural-language search, user isolation, error handling, and basic tests.
+  Complete end-to-end demo flow.
+ 
+P1 — Important next features
+  Readiness score, expiry severity, renewal links.
+  Nominee management, emergency access request, waiting/countdown, owner veto, controlled access, and audit log.
+  Demo nominee view and security indicators.
+ 
+P2 — Polish
+  Animations, visual polish, filters, additional document types, edge-case improvements, email, and extra UX.
+ 
+23. Suggested Team Responsibilities
+  Backend and security: authentication, database models, ownership checks, encryption, file APIs, audit logging.
+  AI and document intelligence: Gemini provider, mock provider, extraction schema, confidence handling, search
+ responses.
+ Frontend: login, dashboard, asset pages, upload/review flow, nominee interface, responsive design.
+  Integration and testing: API helper, seed data, automated tests, demo rehearsal, README, and issue tracking.
+ Adjust the division to the actual team size and each member's strengths. Keep one shared API contract and integrate in
+small, testable increments.
+24. How to Explain the Innovation to Judges
+Smart Vault is not just a digital locker. It is a family document autopilot. A traditional file store expects people to know
+what to upload, remember expiry dates, and manually search files. Smart Vault connects documents to assets, extracts
+information for user confirmation, identifies missing documents, alerts users about expiry, answers questions from
+saved records, and supports controlled emergency access with a waiting period and audit trail.
+A concise pitch: “Smart Vault helps families move from storing documents to managing them intelligently. It connects
+every document to a real-life asset, explains what is missing, tracks what is expiring, answers questions from verified
+user-confirmed records, and enables carefully controlled emergency sharing.”
+Be transparent in the demo: distinguish implemented features from planned features, mock AI from real Gemini
+extraction, demo nominee switching from real nominee authentication, and extraction from official document
+verification.
+25. Final Verification Checklist
+  A new user can register and log in.
+  JWT-protected endpoints reject unauthenticated requests.
+  Users cannot access another user's assets, documents, search results, or audit records.
+  Files are encrypted before being written to storage and can be downloaded/decrypted correctly by an authorized user.
+ 
+
+--- PAGE 11 ---
+Smart Vault | Project Documentation
+Page 11
+ The upload flow allows extracted values to be edited and confirmed.
+  Missing-document and expiry states update after saving a document.
+  Mock mode works without a Gemini API key.
+  Search answers only from current-user data and includes sources.
+  Nominees cannot see protected documents before approval.
+  Approved nominees see only shareable documents and have read-only access.
+  Important actions appear in the audit log.
+  Tests pass and README commands match the actual repository.
+  The complete demo can be repeated reliably.
+ 
+26. Key Takeaway
+Smart Vault is a document autopilot, not simply a digital locker. Its core value is the complete workflow: connect
+assets and documents, extract and confirm information, detect gaps, track expiry, answer questions, and securely
+share selected information during emergencies. Build the P0 workflow end-to-end first, then add nominee controls and
+polish. Security claims must match the implementation.
+
+

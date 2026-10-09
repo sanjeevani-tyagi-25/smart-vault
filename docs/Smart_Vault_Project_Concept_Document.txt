@@ -1,0 +1,98 @@
+--- PAGE 1 ---
+SMART VAULT
+AI-Powered Centralized Legal & Asset Document Management System
+PROJECT TYPE
+Product Speciﬁcation
+TARGET AUDIENCE
+Individuals & Families
+CORE TECH
+AI OCR, Vector Search
+DOCUMENT DATE
+October 2026
+1. EXECUTIVE SUMMARY
+Smart Vault is an intelligent digital management system designed to consolidate, organize, and track critical
+physical and digital legal documents (property registries, vehicle insurance, rental contracts, personal
+identiﬁcation) in one highly secure location. By leveraging OCR and AI indexing, it automates tagging, tracks
+expiration dates, and enables natural language context searches.
+2. PROBLEM STATEMENT
+Fragmentation
+Scattered Documents
+Important family assets (deeds, tax receipts,
+vehicle records, agreement copies) are fragmented
+across physical folders, emails, and cloud drives,
+making retrieve-on-demand stressful and slow.
+Missed Deadlines
+Unnoticed Expirations
+Critical deadlines like PUC renewals, vehicle
+insurance expirations, and rent agreement renewals
+are forgotten due to a lack of active monitoring
+systems.
+Emergency Vulnerability
+Lack of Family Access
+In cases of medical emergencies or unexpected
+events, family members often have no visibility or
+legal access to key documents, deeds, or asset
+records.
+Digital Lock-in
+Limitations of Current Apps
+Existing apps like DigiLocker only store
+government-issued identity cards and fail to
+structure private contracts, bills, deeds, and asset
+histories.
+3. PROPOSED SOLUTION ARCHITECTURE
+Smart Vault bridges the gap between passive storage and active asset management by creating an automated
+hierarchy for every physical asset:
+Auto-Extraction (OCR): Simply snap a photo; AI extracts numbers, dates, and names automatically.
+Asset Grouping: Organizes documents around assets (e.g., "Flat No. 302" holds registry, electricity bills, tax
+receipts, and tenant agreements).
+Proactive Alerting: Automated notiﬁcation engine for impending document expirations and renewals.
+Smart Vault - Project Proposal Page 1 of 2
+
+--- PAGE 2 ---
+4. MARKET DIFFERENTIATION MATRIX
+Feature / Capability DigiLocker Google Drive Smart Vault (Proposed)
+Private Legal Documents (Deeds, Wills,
+Bills)
+Limited /
+Unsupported
+Manual Upload
+Only
+Full Support & Structure
+Metadata Extraction (Auto-tagging via
+OCR)
+No No Automated via AI OCR
+Renewal & Expiry Reminders No No Automated
+(WhatsApp/Email)
+Contextual Asset Search Basic Title Search Keyword Search AI Semantic & Vector
+Search
+Emergency Nominee Access No No Inactivity/Emergency
+Trigger
+5. TECHNICAL ARCHITECTURE & TECH STACK
+Frontend & User Experience
+Clean, responsive cross-platform dashboard for
+effortless document scanning and navigation.
+React / Next.js  Tailwind CSS  PWA / React Native
+Backend & API Engine
+High-performance REST API handling
+authentication, document pipelines, and
+notiﬁcations.
+FastAPI (Python)  Node.js  PostgreSQL
+AI Engine & Search
+Extracts metadata from PDF/Image uploads and
+enables natural language document querying.
+Tesseract OCR  Google Vision API
+ChromaDB / LangChain
+Security & Storage
+Bank-grade encryption ensuring sensitive asset
+data remains strictly conﬁdential.
+AES-256 Encryption  AWS S3 (Encrypted)
+OAuth2 / Biometric
+6. IMPLEMENTATION ROADMAP
+Phase 1 (MVP): User authentication, ﬁle upload to encrypted storage, and manual categorization (Property,
+Vehicle, Identity).
+Phase 2 (AI Integration): OCR integration for automatic document type recognition, date extraction, and
+renewal notiﬁcations.
+Phase 3 (Smart Search & Emergency Access): Natural language search inside document contents and
+conﬁguration of emergency family nominee access triggers.
+Smart Vault - Project Proposal Page 2 of 2
+

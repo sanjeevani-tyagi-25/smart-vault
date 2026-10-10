@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0b1730;
+
+  /* Premium Security Palette Tokens */
+  --navy-deep: #0b1730;
+  --navy-surface: #101d36;
+  --navy-card: #13223f;
+  --navy-card-hover: #182b4f;
+  --navy-border: #1e3258;
+  --navy-border-subtle: #172846;
+
+  --teal-primary: #08c5b3;
+  --teal-hover: #06b2a2;
+  --teal-glow: rgba(8, 197, 179, 0.25);
+  --cyan-highlight: #5eead4;
+
+  --status-green: #10b981;
+  --status-amber: #f59e0b;
+  --status-red: #ef4444;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #070e1e;
+  --foreground: #f8fafc;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark body {
+  background-color: #070e1e;
+  color: #f8fafc;
+}
+
+/* Dedicated AI Document Assistant Input - Always crisp white with dark text (#111827) in BOTH themes */
+.ai-assistant-input,
+#ai-assistant-message-input {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  caret-color: #111827 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.ai-assistant-input::placeholder,
+#ai-assistant-message-input::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+.ai-assistant-input::selection,
+#ai-assistant-message-input::selection {
+  background-color: rgba(8, 197, 179, 0.35) !important;
+  color: #111827 !important;
+}
+
+.ai-assistant-input:focus,
+#ai-assistant-message-input:focus {
+  outline: none !important;
+  border-color: #08c5b3 !important;
+  box-shadow: 0 0 0 2px rgba(8, 197, 179, 0.45) !important;
+}
+
+.ai-assistant-input:disabled,
+#ai-assistant-message-input:disabled {
+  background-color: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+}
+
+.ai-assistant-input:-webkit-autofill,
+.ai-assistant-input:-webkit-autofill:hover,
+.ai-assistant-input:-webkit-autofill:focus,
+#ai-assistant-message-input:-webkit-autofill,
+#ai-assistant-message-input:-webkit-autofill:hover,
+#ai-assistant-message-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+  caret-color: #111827 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Explicit Dark Mode Enforcement for AI Document Assistant Input - Must STAY WHITE with DARK TEXT */
+.dark .ai-assistant-input,
+.dark #ai-assistant-message-input,
+html.dark .ai-assistant-input,
+html.dark #ai-assistant-message-input {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  caret-color: #111827 !important;
+  border-color: #94a3b8 !important;
+}
+
+.dark .ai-assistant-input::placeholder,
+.dark #ai-assistant-message-input::placeholder,
+html.dark .ai-assistant-input::placeholder,
+html.dark #ai-assistant-message-input::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+.dark .ai-assistant-input::selection,
+.dark #ai-assistant-message-input::selection,
+html.dark .ai-assistant-input::selection,
+html.dark #ai-assistant-message-input::selection {
+  background-color: rgba(8, 197, 179, 0.35) !important;
+  color: #111827 !important;
+}
+
+.dark .ai-assistant-input:focus,
+.dark #ai-assistant-message-input:focus,
+html.dark .ai-assistant-input:focus,
+html.dark #ai-assistant-message-input:focus {
+  outline: none !important;
+  border-color: #08c5b3 !important;
+  box-shadow: 0 0 0 2px rgba(8, 197, 179, 0.5) !important;
+}
+
+.dark .ai-assistant-input:disabled,
+.dark #ai-assistant-message-input:disabled,
+html.dark .ai-assistant-input:disabled,
+html.dark #ai-assistant-message-input:disabled {
+  background-color: #e2e8f0 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+}
+
+/* Form inputs high-contrast styling by theme */
+input:not([type="checkbox"]):not([type="radio"]):not(.ai-assistant-input):not(#ai-assistant-message-input),
+select,
+textarea:not(.ai-assistant-input):not(#ai-assistant-message-input) {
+  color: #0f172a;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not(.ai-assistant-input):not(#ai-assistant-message-input):not(.light-input),
+.dark select:not(.light-input),
+.dark textarea:not(.ai-assistant-input):not(#ai-assistant-message-input):not(.light-input) {
+  color: #f8fafc;
+}
+
+/* High contrast placeholder */
+input:not(.ai-assistant-input):not(#ai-assistant-message-input)::placeholder,
+textarea:not(.ai-assistant-input):not(#ai-assistant-message-input)::placeholder {
+  color: #64748b;
+}
+
+.dark input:not(.ai-assistant-input):not(#ai-assistant-message-input)::placeholder,
+.dark textarea:not(.ai-assistant-input):not(#ai-assistant-message-input)::placeholder {
+  color: #94a3b8;
+}
+
+/* Cross-browser High-Contrast Dropdowns: options should always have solid readable contrast */
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 8px 12px;
+}
+
+/* Accessible focus ring for security inputs */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #08c5b3;
+  box-shadow: 0 0 0 2px rgba(8, 197, 179, 0.25);
+}
+
+/* Centralized Dark Mode Palette Mapping for Smart Vault Surfaces */
+.dark .bg-white:not(.ai-assistant-input):not(#ai-assistant-message-input):not(.keep-white) {
+  background-color: #101d36;
+  color: #f8fafc;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-200\/80,
+.dark .border-slate-300 {
+  border-color: #1e3258;
+}
+
+.dark .text-\[\#0B1730\],
+.dark .text-slate-900,
+.dark .text-slate-800 {
+  color: #f8fafc;
+}
+
+.dark .text-slate-700,
+.dark .text-slate-600 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #0b1730;
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: #162749;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e3258;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

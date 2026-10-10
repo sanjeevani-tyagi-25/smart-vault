@@ -1,0 +1,126 @@
+ .env                                               |   27 [31m-[m
+ .gitignore                                         |   32 [32m+[m
+ app/__pycache__/__init__.cpython-312.pyc           |  Bin [31m231[m -> [32m0[m bytes
+ app/__pycache__/audit.cpython-312.pyc              |  Bin [31m1002[m -> [32m0[m bytes
+ app/__pycache__/auth.cpython-312.pyc               |  Bin [31m4272[m -> [32m0[m bytes
+ app/__pycache__/checklist.cpython-312.pyc          |  Bin [31m3408[m -> [32m0[m bytes
+ app/__pycache__/config.cpython-312.pyc             |  Bin [31m2124[m -> [32m0[m bytes
+ app/__pycache__/crypto.cpython-312.pyc             |  Bin [31m2612[m -> [32m0[m bytes
+ app/__pycache__/database.cpython-312.pyc           |  Bin [31m1725[m -> [32m0[m bytes
+ app/__pycache__/main.cpython-312.pyc               |  Bin [31m3038[m -> [32m0[m bytes
+ app/__pycache__/models.cpython-312.pyc             |  Bin [31m5518[m -> [32m0[m bytes
+ app/__pycache__/schemas.cpython-312.pyc            |  Bin [31m5885[m -> [32m0[m bytes
+ app/ai/__pycache__/__init__.cpython-312.pyc        |  Bin [31m239[m -> [32m0[m bytes
+ app/ai/__pycache__/base.cpython-312.pyc            |  Bin [31m1510[m -> [32m0[m bytes
+ app/ai/__pycache__/factory.cpython-312.pyc         |  Bin [31m902[m -> [32m0[m bytes
+ app/ai/__pycache__/gemini_provider.cpython-312.pyc |  Bin [31m5346[m -> [32m0[m bytes
+ app/ai/__pycache__/mock_data.cpython-312.pyc       |  Bin [31m11072[m -> [32m0[m bytes
+ app/ai/__pycache__/mock_provider.cpython-312.pyc   |  Bin [31m2162[m -> [32m0[m bytes
+ app/ai/__pycache__/prompts.cpython-312.pyc         |  Bin [31m1606[m -> [32m0[m bytes
+ app/ai/__pycache__/schemas.cpython-312.pyc         |  Bin [31m5642[m -> [32m0[m bytes
+ app/ai/document_parser.py                          |  795 [32m+++++++++++++++[m
+ app/ai/extractors.py                               |  131 [32m+++[m
+ app/ai/factory.py                                  |   25 [32m+[m[31m-[m
+ app/ai/gemini_provider.py                          |   69 [32m+[m[31m-[m
+ app/ai/local_provider.py                           |  160 [32m+++[m
+ app/ai/mock_provider.py                            |   43 [32m+[m[31m-[m
+ app/ai/prompts.py                                  |   54 [32m+[m[31m-[m
+ app/ai/schemas.py                                  |   61 [32m+[m[31m-[m
+ app/config.py                                      |    7 [32m+[m
+ app/database.py                                    |   15 [32m+[m[31m-[m
+ app/main.py                                        |   54 [32m+[m[31m-[m
+ app/models.py                                      |   91 [32m+[m[31m-[m
+ app/notifications.py                               |  302 [32m++++++[m
+ app/routers/__pycache__/__init__.cpython-312.pyc   |  Bin [31m235[m -> [32m0[m bytes
+ app/routers/__pycache__/assets.cpython-312.pyc     |  Bin [31m7105[m -> [32m0[m bytes
+ app/routers/__pycache__/audit.cpython-312.pyc      |  Bin [31m1585[m -> [32m0[m bytes
+ app/routers/__pycache__/auth.cpython-312.pyc       |  Bin [31m4159[m -> [32m0[m bytes
+ app/routers/__pycache__/dashboard.cpython-312.pyc  |  Bin [31m9956[m -> [32m0[m bytes
+ app/routers/__pycache__/documents.cpython-312.pyc  |  Bin [31m18493[m -> [32m0[m bytes
+ app/routers/__pycache__/nominees.cpython-312.pyc   |  Bin [31m15724[m -> [32m0[m bytes
+ app/routers/__pycache__/search.cpython-312.pyc     |  Bin [31m11510[m -> [32m0[m bytes
+ app/routers/assets.py                              |   52 [32m+[m[31m-[m
+ app/routers/dashboard.py                           |    2 [32m+[m[31m-[m
+ app/routers/documents.py                           |  121 [32m++[m[31m-[m
+ app/routers/notifications.py                       |  235 [32m+++++[m
+ app/routers/search.py                              |  212 [32m+++[m[31m-[m
+ app/schemas.py                                     |   82 [32m+[m[31m-[m
+ frontend/app/assets/[id]/page.tsx                  |   60 [32m+[m[31m-[m
+ frontend/app/assets/[id]/upload/page.tsx           |  627 [32m++++++++[m[31m----[m
+ frontend/app/audit/page.tsx                        |   10 [32m+[m[31m-[m
+ frontend/app/dashboard/page.tsx                    |  617 [32m++++++++[m[31m---[m
+ frontend/app/globals.css                           |  167 [32m++[m[31m-[m
+ frontend/app/layout.tsx                            |   70 [32m+[m[31m-[m
+ frontend/app/login/page.tsx                        |   64 [32m+[m[31m-[m
+ frontend/app/nominees/page.tsx                     |    5 [32m+[m[31m-[m
+ frontend/app/notifications/page.tsx                |  758 [32m++++++++++++++[m
+ frontend/app/vault/page.tsx                        | 1066 [32m+++++++++++++++[m[31m-----[m
+ frontend/components/Navbar.tsx                     |  405 [32m+++++++[m[31m-[m
+ frontend/lib/api.ts                                |   82 [32m++[m
+ frontend/lib/format.ts                             |   65 [32m++[m
+ frontend/lib/theme.tsx                             |   88 [32m++[m
+ frontend/lib/types.ts                              |   43 [32m+[m[31m-[m
+ frontend/public/samples/README.md                  |   17 [32m+[m
+ frontend/public/samples/aadhaar_self.jpg           |  Bin [31m0[m -> [32m18342[m bytes
+ frontend/public/samples/electricity_flat302.jpg    |  Bin [31m0[m -> [32m18128[m bytes
+ frontend/public/samples/hindi_insurance.jpg        |  Bin [31m0[m -> [32m18029[m bytes
+ frontend/public/samples/insurance_honda.jpg        |  Bin [31m0[m -> [32m18378[m bytes
+ frontend/public/samples/puc_honda.jpg              |  Bin [31m0[m -> [32m18228[m bytes
+ frontend/public/samples/rc_honda.jpg               |  Bin [31m0[m -> [32m17936[m bytes
+ frontend/public/samples/rent_agreement.pdf         |   74 [32m++[m
+ requirements.txt                                   |    4 [32m+[m
+ samples/rent_agreement.pdf                         |   86 [32m+[m[31m-[m
+ scripts/test_winrt_ocr.ps1                         |   42 [32m+[m
+ storage/0c4347df831d43e5bf8f7ebdf98408ed.enc       |  Bin [31m157[m -> [32m0[m bytes
+ storage/17ad4ddb878341d28e30d5aeb093711a.enc       |  Bin [31m50[m -> [32m0[m bytes
+ storage/1e28786b909b494c8939b40609eb0236.enc       |    1 [31m-[m
+ storage/2c9ed6ace539478fa02f2463626cf4b2.enc       |  Bin [31m149[m -> [32m0[m bytes
+ storage/2de3b4042bf5494d9de42e86e59fa87e.enc       |    1 [31m-[m
+ storage/33cbda9d0acf45dd9290741f1c4f481b.enc       |    1 [31m-[m
+ storage/3a83f55efea9406eb419fbed7cc5f89c.enc       |    2 [31m-[m
+ storage/3b59f644803c4721b981759b15301187.enc       |    1 [31m-[m
+ storage/3b72bddcf61946c380ad3435153db620.enc       |    1 [31m-[m
+ storage/3f711550bb994d30aed24570b39c11f6.enc       |    1 [31m-[m
+ storage/48cb466c06324f3bbf41db93a4e10ef1.enc       |    2 [31m-[m
+ storage/53a61f3317f24377a20aef64c7a4fd10.enc       |    1 [31m-[m
+ storage/572303ea3706468e95d91cc0fe39fb47.enc       |  Bin [31m50[m -> [32m0[m bytes
+ storage/5d7ac62dcbb84f549856d6c75297c16d.enc       |    2 [31m-[m
+ storage/6ea4ffe9bcdb4a43bc8dd953d10d4ccd.enc       |    1 [31m-[m
+ storage/78d88c6a682a4971a6e5d642692600cf.enc       |    1 [31m-[m
+ storage/7a937c10cfa34c9581bd97715e12fd57.enc       |    2 [31m-[m
+ storage/7f70c01d0dea476c86aeb4506aba30ca.enc       |    2 [31m-[m
+ storage/94cd18d8871f491eacea00be9bf1d796.enc       |  Bin [31m156[m -> [32m0[m bytes
+ storage/a7d3c3cab5ed4174bf76686884144fca.enc       |    1 [31m-[m
+ storage/a820e4760a9249e083fe6719e7c705a8.enc       |    1 [31m-[m
+ storage/aed9094b636c4b7581db04ee8d1d47e2.enc       |  Bin [31m149[m -> [32m0[m bytes
+ storage/b1f8d01685654ee290bbea23e9d15f78.enc       |  Bin [31m86824[m -> [32m0[m bytes
+ storage/d5007e87aa1e48dda4ec03b549b85fe2.enc       |    2 [31m-[m
+ storage/dab5c40347a949d38c2337c822ef86e0.enc       |    1 [31m-[m
+ storage/e9fbaf48640f4e15979d015409476bbe.enc       |  Bin [31m146[m -> [32m0[m bytes
+ storage/ec51e67e1e594ba5862172b547a61ad2.enc       |  Bin [31m157[m -> [32m0[m bytes
+ storage/ef02dc5a7b3443b6bb5573197d9be610.enc       |    2 [31m-[m
+ storage/f24ba5c695a24c689617f11a15e57adf.enc       |    1 [31m-[m
+ storage/f490dd08ecff461db7349015ef3e98d4.enc       |    1 [31m-[m
+ storage/temp/0034a581884e47bc930f403b866f7b39.json |    1 [31m-[m
+ storage/temp/0034a581884e47bc930f403b866f7b39.tmp  |    1 [31m-[m
+ storage/temp/2189edc81e5c44bc8447708ca89a9557.json |    1 [31m-[m
+ storage/temp/2189edc81e5c44bc8447708ca89a9557.tmp  |    1 [31m-[m
+ storage/temp/397c87476203412aa3797594438cb035.json |    1 [31m-[m
+ storage/temp/397c87476203412aa3797594438cb035.tmp  |    1 [31m-[m
+ storage/temp/414d7e601a254467b1bcaf1f65e30255.json |    1 [31m-[m
+ storage/temp/414d7e601a254467b1bcaf1f65e30255.tmp  |  Bin [31m90723[m -> [32m0[m bytes
+ storage/temp/6c93f1ee135745eeb03b4fdcf25c6f28.json |    1 [31m-[m
+ storage/temp/6c93f1ee135745eeb03b4fdcf25c6f28.tmp  |    1 [31m-[m
+ storage/temp/d43a2f20b19649d1bd7fa3a5b2de0caa.json |    1 [31m-[m
+ storage/temp/d43a2f20b19649d1bd7fa3a5b2de0caa.tmp  |  Bin [31m514899[m -> [32m0[m bytes
+ storage/temp/f11c62e872e74cd3b66622893c628c3e.json |    1 [31m-[m
+ storage/temp/f11c62e872e74cd3b66622893c628c3e.tmp  |    1 [31m-[m
+ test_vault.db                                      |  Bin [31m86016[m -> [32m0[m bytes
+ test_vault_full_spec.db                            |  Bin [31m86016[m -> [32m0[m bytes
+ test_vault_p1.db                                   |  Bin [31m86016[m -> [32m0[m bytes
+ tests/test_asset_vault_flow.py                     |  162 [32m+++[m
+ tests/test_document_extraction.py                  |  387 [32m+++++++[m
+ tests/test_notifications_and_reminders.py          |  311 [32m++++++[m
+ tests/test_rc_puc_verification.py                  |  499 [32m+++++++++[m
+ vault.db                                           |  Bin [31m86016[m -> [32m0[m bytes
+ 125 files changed, 7412 insertions(+), 907 deletions(-)

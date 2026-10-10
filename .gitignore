@@ -1,0 +1,32 @@
+# Environment secrets
+
+.env
+.env.*
+!.env.example
+
+# Python
+
+**pycache**/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Frontend
+
+node_modules/
+.next/
+
+# Local databases
+
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded and temporary files
+
+storage/
+
+# Local environment files
+
+.DS_Store

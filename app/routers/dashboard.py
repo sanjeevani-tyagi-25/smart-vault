@@ -199,7 +199,7 @@ def get_dashboard(
         .limit(6)
         .all()
     )
-    recent_activity = [AuditLogOut.model_validate(l).model_dump() for l in recent_logs]
+    recent_activity = [AuditLogOut.model_validate(l).model_dump(mode="json") for l in recent_logs]
 
     return {
         "readiness_score": readiness_score,

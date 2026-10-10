@@ -56,6 +56,10 @@ def list_assets(current_user: User = Depends(get_current_user), db: Session = De
     return results
 
 
+from pathlib import Path
+from app.audit import log_audit
+
+
 @router.post("", response_model=AssetOut, status_code=status.HTTP_201_CREATED)
 def create_asset(
     asset_in: AssetCreate,
@@ -63,14 +67,36 @@ def create_asset(
     db: Session = Depends(get_db),
 ):
     """Create a new asset (e.g. Honda City, Flat 302, Self)."""
+    cleaned_name = asset_in.name.strip()
+    if not cleaned_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Asset name cannot be empty.",
+        )
+    allowed_types = {"vehicle", "property", "person", "other"}
+    asset_type = asset_in.type.lower().strip()
+    if asset_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid asset category '{asset_in.type}'. Allowed: vehicle, property, person, other.",
+        )
+
     asset = Asset(
         user_id=current_user.id,
-        name=asset_in.name.strip(),
-        type=asset_in.type.lower().strip(),
+        name=cleaned_name,
+        type=asset_type,
     )
     db.add(asset)
     db.commit()
     db.refresh(asset)
+
+    log_audit(
+        db=db,
+        owner_id=current_user.id,
+        actor_name=current_user.name,
+        action="ASSET_CREATE",
+        target=f"{asset.name} ({asset.type})",
+    )
 
     missing = get_missing_for_asset(asset.type, set())
     return AssetOut(
@@ -119,11 +145,31 @@ def delete_asset(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Delete an asset and all its associated documents."""
+    """Delete an asset and all its associated documents, wiping encrypted files from disk."""
     asset = db.query(Asset).filter(Asset.id == asset_id, Asset.user_id == current_user.id).first()
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
 
+    # Wipe all encrypted files belonging to this asset's documents from disk
+    for doc in asset.documents:
+        try:
+            Path(doc.file_path).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    asset_name = asset.name
+    asset_type = asset.type
+
     db.delete(asset)
     db.commit()
+
+    log_audit(
+        db=db,
+        owner_id=current_user.id,
+        actor_name=current_user.name,
+        action="ASSET_DELETE",
+        target=f"{asset_name} ({asset_type})",
+    )
+
     return {"detail": "Asset deleted successfully", "asset_id": asset_id}
+

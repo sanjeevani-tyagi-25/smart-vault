@@ -37,6 +37,7 @@ import {
   getToken,
 } from "@/lib/api";
 import { Nominee, AccessRequest, DocumentItem } from "@/lib/types";
+import { formatDateTimeIST, formatTimeIST } from "@/lib/format";
 
 export default function NomineesPage() {
   const router = useRouter();
@@ -589,7 +590,7 @@ export default function NomineesPage() {
                     </span>
                   </div>
                   <p className="text-slate-500 text-[11px] mt-0.5 font-mono">
-                    Requested: {new Date(req.requested_at).toLocaleString("en-IN")}
+                    Requested: {formatDateTimeIST(req.requested_at)}
                   </p>
                 </div>
 
@@ -612,7 +613,7 @@ export default function NomineesPage() {
                   )}
                   {req.resolved_at && (
                     <span className="text-[11px] text-slate-400 font-mono">
-                      Resolved: {new Date(req.resolved_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      Resolved: {formatTimeIST(req.resolved_at)}
                     </span>
                   )}
                 </div>

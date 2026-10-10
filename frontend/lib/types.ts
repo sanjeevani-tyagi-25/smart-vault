@@ -21,11 +21,12 @@ export interface DocumentFields {
 }
 
 export interface DocumentConfidence {
-  doc_type: number;
-  number: number;
-  holder_name: number;
-  issue_date: number;
-  expiry_date: number;
+  doc_type?: number;
+  number?: number;
+  holder_name?: number;
+  issue_date?: number;
+  expiry_date?: number;
+  [key: string]: number | undefined;
 }
 
 export interface DocumentItem {
@@ -53,6 +54,9 @@ export interface DocumentUpdatePayload {
   issue_date?: string | null;
   expiry_date?: string | null;
   is_emergency_shareable?: boolean;
+  fields_json?: string;
+  fields?: DocumentFields;
+  raw_text?: string;
 }
 
 export interface ChecklistItem {
@@ -168,3 +172,32 @@ export interface AuditLogItem {
   target: string;
   timestamp: string;
 }
+
+export interface NotificationItem {
+  id: number;
+  user_id: number;
+  document_id?: number | null;
+  asset_id?: number | null;
+  title: string;
+  message: string;
+  severity: "upcoming" | "soon" | "urgent" | "expired" | "renewed";
+  days_left: number;
+  interval_days: number;
+  state: "active" | "read" | "dismissed" | "renewed";
+  is_read: boolean;
+  is_dismissed: boolean;
+  expiry_date?: string | null;
+  created_at: string;
+  read_at?: string | null;
+  dismissed_at?: string | null;
+  asset_name?: string | null;
+  doc_type?: string | null;
+}
+
+export interface ReminderSettings {
+  user_id: number;
+  intervals: number[];
+  email_enabled: boolean;
+  custom_intervals?: number[];
+}
+

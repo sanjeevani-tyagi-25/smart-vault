@@ -1,29 +1,64 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.database import engine, Base, ensure_sqlite_schema
-from app.routers import auth, assets, documents, dashboard, search, nominees, audit
+from app.config import CORS_ORIGINS
+from app.database import engine, Base, ensure_sqlite_schema, SessionLocal
+from app.routers import auth, assets, documents, dashboard, search, nominees, audit, notifications
+from app.notifications import run_scheduled_notifications_check
 
 # Create database tables automatically & migrate columns if needed
 Base.metadata.create_all(bind=engine)
 ensure_sqlite_schema()
 
+
+async def background_expiry_scheduler():
+    """Background task running continuously to check document expiries and create smart reminders."""
+    # Brief pause after startup to allow server to be fully ready
+    await asyncio.sleep(2)
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                run_scheduled_notifications_check(db)
+            finally:
+                db.close()
+        except Exception as err:
+            print(f"[SmartVault Scheduler] Error running expiry checks: {err}")
+        # Run periodically (e.g. every 1 hour)
+        await asyncio.sleep(3600)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: ensure tables & start background notification worker
+    Base.metadata.create_all(bind=engine)
+    ensure_sqlite_schema()
+    scheduler_task = asyncio.create_task(background_expiry_scheduler())
+    yield
+    # Shutdown
+    scheduler_task.cancel()
+    try:
+        await scheduler_task
+    except asyncio.CancelledError:
+        pass
+
+
 app = FastAPI(
     title="Smart Vault API",
     description="Family document autopilot for Indian households with AES-256 encryption & AI extraction.",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
-# Enable CORS for Next.js frontend
+# Enable CORS for Next.js frontend (allowing configurable origins and local dev ports)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=CORS_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,6 +87,7 @@ app.include_router(dashboard.router)
 app.include_router(search.router)
 app.include_router(nominees.router)
 app.include_router(audit.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

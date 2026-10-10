@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import STORAGE_PATH, TEMP_PATH
 from app.database import get_db
-from app.models import User, Asset, Document
+from app.models import User, Asset, Document, utc_now
 from app.schemas import DocumentOut, DocumentUpdate
 from app.auth import get_current_user
 from app.crypto import encrypt_bytes, decrypt_bytes
@@ -88,15 +88,19 @@ async def extract_document(
             mime_type=mime_type,
             filename=filename,
         )
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
     except Exception as err:
-        # Return friendly 502 with fallback template so UI never dead-ends
+        # Return explicitly identified fallback template so user is never blocked
         fallback = EMPTY_EDITABLE_TEMPLATE.copy()
         fallback["title"] = filename
         fallback["temp_file_token"] = temp_token
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Could not read this document, please enter details manually.",
-        )
+        fallback["raw_text"] = ""
+        fallback["note"] = f"Extraction fallback: {err}"
+        return fallback
 
     # Attach temp_file_token to response for seamless client saving
     result["temp_file_token"] = temp_token
@@ -203,6 +207,13 @@ async def create_document(
         target=f"{document.title} ({asset.name})",
     )
 
+    if document.expiry_date:
+        from app.notifications import check_and_create_notifications_for_document
+        try:
+            check_and_create_notifications_for_document(db, document)
+        except Exception as e:
+            print(f"[Notifications] Error creating reminder on upload: {e}")
+
     return serialize_doc(document)
 
 
@@ -285,6 +296,14 @@ def update_document(
         doc.expiry_date = doc_update.expiry_date.strip() if doc_update.expiry_date.strip() not in ("null", "None", "") else None
     if doc_update.is_emergency_shareable is not None:
         doc.is_emergency_shareable = doc_update.is_emergency_shareable
+    if doc_update.fields_json is not None:
+        doc.fields_json = doc_update.fields_json
+    elif doc_update.fields is not None:
+        doc.fields_json = json.dumps(doc_update.fields)
+    if doc_update.confidence_json is not None:
+        doc.confidence_json = doc_update.confidence_json
+    if doc_update.raw_text is not None:
+        doc.raw_text = doc_update.raw_text
 
     db.commit()
     db.refresh(doc)
@@ -296,6 +315,12 @@ def update_document(
         action="DOCUMENT_UPDATE",
         target=f"Updated metadata for {doc.title}",
     )
+
+    from app.notifications import check_and_create_notifications_for_document
+    try:
+        check_and_create_notifications_for_document(db, doc)
+    except Exception as e:
+        print(f"[Notifications] Error updating reminders on document edit: {e}")
 
     return serialize_doc(doc)
 
@@ -403,3 +428,87 @@ def delete_document(
     )
 
     return {"detail": "Document successfully deleted", "document_id": document_id}
+
+
+@router.post("/{document_id}/renew", response_model=DocumentOut)
+async def renew_document(
+    document_id: int,
+    new_expiry_date: str = Form(...),
+    notes: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    fields_json: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Renew a document with confirmed new expiry date and optional renewed file upload.
+    Preserves renewal history, updates encrypted file, refreshes reminders, and transitions previous alerts to 'renewed'.
+    """
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    cleaned_new_expiry = new_expiry_date.strip()
+    if not cleaned_new_expiry:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New expiry date is required for renewal.")
+
+    # 1. Update renewal history in fields_json
+    try:
+        fields = json.loads(doc.fields_json) if doc.fields_json else {}
+    except Exception:
+        fields = {}
+
+    history = fields.get("renewal_history", [])
+    history.append({
+        "previous_expiry_date": doc.expiry_date,
+        "renewed_at": utc_now().isoformat(),
+        "notes": notes,
+        "previous_filename": doc.original_filename,
+    })
+    fields["renewal_history"] = history
+    fields["previous_expiry_date"] = doc.expiry_date
+
+    if fields_json:
+        try:
+            extra = json.loads(fields_json)
+            fields.update(extra)
+            fields["renewal_history"] = history
+        except Exception:
+            pass
+
+    doc.fields_json = json.dumps(fields)
+
+    # 2. If new file uploaded, encrypt and store new file
+    if file and file.filename:
+        new_content = await file.read()
+        if len(new_content) > 0:
+            encrypted_payload = encrypt_bytes(new_content)
+            # Remove old file
+            try:
+                Path(doc.file_path).unlink(missing_ok=True)
+            except Exception:
+                pass
+
+            new_storage_filename = f"{uuid.uuid4().hex}.enc"
+            new_storage_path = STORAGE_PATH / new_storage_filename
+            new_storage_path.write_bytes(encrypted_payload)
+
+            doc.file_path = str(new_storage_path)
+            doc.original_filename = file.filename
+            doc.mime_type = file.content_type or doc.mime_type
+
+    # 3. Transition reminders and update expiry date
+    from app.notifications import handle_document_renewed
+    handle_document_renewed(db, doc, cleaned_new_expiry)
+
+    # 4. Log audit event
+    log_audit(
+        db=db,
+        owner_id=current_user.id,
+        actor_name=current_user.name,
+        action="DOCUMENT_RENEWAL",
+        target=f"{doc.title} (extended to {cleaned_new_expiry})",
+    )
+
+    return serialize_doc(doc)
+

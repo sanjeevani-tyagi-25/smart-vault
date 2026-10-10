@@ -29,3 +29,10 @@ TEMP_PATH.mkdir(parents=True, exist_ok=True)
 
 ENABLE_RESEND_EMAIL = os.getenv("ENABLE_RESEND_EMAIL", "false").lower() in ("true", "1", "yes")
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+
+CORS_ORIGINS_RAW = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000",
+)
+CORS_ORIGINS = [o.strip() for o in CORS_ORIGINS_RAW.split(",") if o.strip()]
+

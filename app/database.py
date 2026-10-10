@@ -14,11 +14,16 @@ def ensure_sqlite_schema():
     """Ensures backwards compatibility by adding any columns introduced after table creation."""
     if DATABASE_URL.startswith("sqlite"):
         with engine.connect() as conn:
-            try:
-                conn.execute(text("ALTER TABLE documents ADD COLUMN is_emergency_shareable BOOLEAN DEFAULT 1"))
-                conn.commit()
-            except Exception:
-                pass
+            for col_sql in [
+                "ALTER TABLE documents ADD COLUMN is_emergency_shareable BOOLEAN DEFAULT 1",
+                "ALTER TABLE documents ADD COLUMN issue_date VARCHAR(20)",
+                "ALTER TABLE documents ADD COLUMN expiry_date VARCHAR(20)",
+            ]:
+                try:
+                    conn.execute(text(col_sql))
+                    conn.commit()
+                except Exception:
+                    pass
 
 
 def get_db():

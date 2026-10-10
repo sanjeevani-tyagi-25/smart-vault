@@ -25,10 +25,16 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_db():
+    old_mock = os.environ.get("AI_MOCK")
+    os.environ["AI_MOCK"] = "true"
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+    if old_mock is not None:
+        os.environ["AI_MOCK"] = old_mock
+    else:
+        os.environ.pop("AI_MOCK", None)
 
 
 def test_markdown_fence_stripping_and_json_parsing():

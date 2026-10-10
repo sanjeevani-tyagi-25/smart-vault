@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { getAuditLog, getToken } from "@/lib/api";
 import { AuditLogItem } from "@/lib/types";
+import { formatDateTimeIST } from "@/lib/format";
 
 export default function AuditLogPage() {
   const router = useRouter();
@@ -255,14 +256,7 @@ export default function AuditLogPage() {
                 {filteredLogs.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 pl-2 font-mono text-[11px] text-slate-500 whitespace-nowrap">
-                      {new Date(item.timestamp).toLocaleString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}
+                      {formatDateTimeIST(item.timestamp)}
                     </td>
                     <td className="py-3.5 font-bold text-slate-900 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">

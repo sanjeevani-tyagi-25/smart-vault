@@ -57,6 +57,9 @@ export default function AssetDetailPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDocType, setEditDocType] = useState("");
+  const [editNumber, setEditNumber] = useState("");
+  const [editHolderName, setEditHolderName] = useState("");
+  const [editIssuer, setEditIssuer] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState("");
   const [editIssueDate, setEditIssueDate] = useState("");
   const [editShareable, setEditShareable] = useState(true);
@@ -145,6 +148,9 @@ export default function AssetDetailPage() {
     setIsEditMode(edit);
     setEditTitle(doc.title);
     setEditDocType(doc.doc_type);
+    setEditNumber(doc.fields?.number || "");
+    setEditHolderName(doc.fields?.holder_name || "");
+    setEditIssuer(doc.fields?.issuer || "");
     setEditExpiryDate(doc.expiry_date || "");
     setEditIssueDate(doc.issue_date || "");
     setEditShareable(doc.is_emergency_shareable);
@@ -161,9 +167,15 @@ export default function AssetDetailPage() {
         expiry_date: editExpiryDate.trim() || null,
         issue_date: editIssueDate.trim() || null,
         is_emergency_shareable: editShareable,
+        fields: {
+          ...(activeDoc.fields || {}),
+          number: editNumber.trim() || null,
+          holder_name: editHolderName.trim() || null,
+          issuer: editIssuer.trim() || null,
+        },
       };
       const updated = await updateDocument(activeDoc.id, payload);
-      showToast("Document metadata updated successfully!");
+      showToast("Document metadata and fields updated successfully!");
       setActiveDoc(updated);
       setIsEditMode(false);
       await loadAsset();
@@ -581,6 +593,19 @@ export default function AssetDetailPage() {
                       {activeDoc.is_emergency_shareable ? "Shared with Nominee" : "Private Only"}
                     </span>
                   </div>
+
+                  {activeDoc.fields?.extra && Object.keys(activeDoc.fields.extra).length > 0 && (
+                    <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                      {Object.entries(activeDoc.fields.extra).map(([k, v]) =>
+                        v !== null && v !== undefined && v !== "" ? (
+                          <div key={k} className="flex justify-between">
+                            <span className="text-slate-500 font-medium capitalize">{k.replace(/_/g, " ")}:</span>
+                            <span className="font-bold text-slate-900">{String(v)}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {activeDoc.raw_text && (
@@ -631,6 +656,39 @@ export default function AssetDetailPage() {
                     type="text"
                     value={editDocType}
                     onChange={(e) => setEditDocType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#08C5B3]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">Document / Identification Number</label>
+                  <input
+                    type="text"
+                    value={editNumber}
+                    onChange={(e) => setEditNumber(e.target.value)}
+                    placeholder="e.g. DL-01-AB-1234 or POL-123"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#08C5B3]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">Holder / Party Name</label>
+                  <input
+                    type="text"
+                    value={editHolderName}
+                    onChange={(e) => setEditHolderName(e.target.value)}
+                    placeholder="e.g. Full Name"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#08C5B3]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">Issuing Authority / Company</label>
+                  <input
+                    type="text"
+                    value={editIssuer}
+                    onChange={(e) => setEditIssuer(e.target.value)}
+                    placeholder="e.g. Transport Department"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#08C5B3]"
                   />
                 </div>

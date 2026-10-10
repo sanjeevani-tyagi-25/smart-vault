@@ -10,6 +10,8 @@ import {
   Nominee,
   AccessRequest,
   AuditLogItem,
+  NotificationItem,
+  ReminderSettings,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -280,3 +282,83 @@ export async function getNomineeDocuments(): Promise<DocumentItem[]> {
 export async function getAuditLog(): Promise<AuditLogItem[]> {
   return apiFetch<AuditLogItem[]>("/audit-log");
 }
+
+// --- Notifications & Reminders ---
+export async function getNotifications(includeDismissed = false): Promise<NotificationItem[]> {
+  return apiFetch<NotificationItem[]>(`/notifications?include_dismissed=${includeDismissed}`);
+}
+
+export async function getUnreadNotificationsCount(): Promise<{ unread_count: number }> {
+  return apiFetch<{ unread_count: number }>("/notifications/unread-count");
+}
+
+export async function markNotificationRead(id: number): Promise<NotificationItem> {
+  return apiFetch<NotificationItem>(`/notifications/${id}/read`, {
+    method: "PATCH",
+  });
+}
+
+export async function markAllNotificationsRead(): Promise<{ updated: number }> {
+  return apiFetch<{ updated: number }>("/notifications/mark-all-read", {
+    method: "POST",
+  });
+}
+
+export async function dismissNotification(id: number): Promise<NotificationItem> {
+  return apiFetch<NotificationItem>(`/notifications/${id}/dismiss`, {
+    method: "PATCH",
+  });
+}
+
+export async function getReminderSettings(): Promise<ReminderSettings> {
+  return apiFetch<ReminderSettings>("/notifications/settings");
+}
+
+export async function updateReminderSettings(data: {
+  intervals?: number[];
+  email_enabled?: boolean;
+}): Promise<ReminderSettings> {
+  return apiFetch<ReminderSettings>("/notifications/settings", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function triggerNotificationsCheck(): Promise<{
+  created_count: number;
+  updated_count: number;
+  total_notifications: number;
+}> {
+  return apiFetch<{
+    created_count: number;
+    updated_count: number;
+    total_notifications: number;
+  }>("/notifications/check", {
+    method: "POST",
+  });
+}
+
+// --- Document Renewal ---
+export async function renewDocument(
+  documentId: number,
+  expiryDate: string,
+  options?: {
+    issueDate?: string;
+    file?: File | null;
+  }
+): Promise<DocumentItem> {
+  const formData = new FormData();
+  formData.append("new_expiry_date", expiryDate);
+  if (options?.issueDate) {
+    formData.append("new_issue_date", options.issueDate);
+  }
+  if (options?.file) {
+    formData.append("file", options.file);
+  }
+
+  return apiFetch<DocumentItem>(`/documents/${documentId}/renew`, {
+    method: "POST",
+    body: formData,
+  });
+}
+

@@ -6,21 +6,27 @@ from google.genai import types
 
 from app.config import GEMINI_API_KEY, AI_MODEL, AI_TIMEOUT_SECONDS
 from app.ai.base import BaseAIProvider
-from app.ai.prompts import EXTRACTION_SYSTEM_PROMPT, EMPTY_EDITABLE_TEMPLATE
+from app.ai.prompts import EXTRACTION_SYSTEM_PROMPT
 from app.ai.schemas import parse_and_validate_ai_json
+from app.ai.local_provider import LocalOCRProvider
 
 logger = logging.getLogger(__name__)
 
 
 class GeminiProvider(BaseAIProvider):
-    """Google Gemini Provider using official google-genai SDK."""
+    """Google Gemini Provider using official google-genai SDK with automatic local OCR fallback."""
 
     def __init__(self, api_key: str = GEMINI_API_KEY, model: str = AI_MODEL):
         if not api_key or api_key == "mock-gemini-key":
             self.client = None
         else:
-            self.client = genai.Client(api_key=api_key)
+            try:
+                self.client = genai.Client(api_key=api_key)
+            except Exception as e:
+                logger.warning("Could not initialize Gemini Client: %s", e)
+                self.client = None
         self.model = model
+        self.local_fallback = LocalOCRProvider()
 
     def _call_model(self, parts: list, prompt_text: str) -> str:
         """Synchronous call to Gemini SDK wrapped in thread."""
@@ -45,54 +51,41 @@ class GeminiProvider(BaseAIProvider):
         mime_type: str,
         filename: str,
     ) -> Dict[str, Any]:
-        """Extract structured fields using Gemini multimodal vision."""
+        """
+        Extract structured fields using Gemini multimodal vision.
+        If Gemini is unavailable or errors, falls back to genuine Local OCR extraction.
+        """
         if not self.client:
-            raise ValueError("Gemini API key is not configured. Please set GEMINI_API_KEY in .env.")
+            logger.info("Gemini client not configured. Using local OCR extraction.")
+            res = await self.local_fallback.extract_document(file_bytes, mime_type, filename)
+            res["provider"] = "local_ocr"
+            return res
 
-        # Create inline media part
-        media_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
-
-        # Attempt 1
+        # Attempt Gemini multimodal extraction
         try:
+            media_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
             raw_response = await asyncio.wait_for(
                 asyncio.to_thread(self._call_model, [media_part], EXTRACTION_SYSTEM_PROMPT),
                 timeout=AI_TIMEOUT_SECONDS,
             )
             validated = parse_and_validate_ai_json(raw_response)
-            return validated.model_dump()
+            result = validated.model_dump()
+            result["provider"] = "gemini"
+            return result
         except asyncio.TimeoutError:
-            logger.error("Gemini extraction timed out after %s seconds", AI_TIMEOUT_SECONDS)
-            raise TimeoutError(f"Extraction timed out after {AI_TIMEOUT_SECONDS}s")
-        except Exception as first_err:
-            logger.warning("First attempt extraction failed to parse JSON, retrying once: %s", type(first_err).__name__)
+            logger.warning("Gemini extraction timed out after %ss. Falling back to local OCR.", AI_TIMEOUT_SECONDS)
+        except Exception as err:
+            logger.warning("Gemini extraction error (%s). Falling back to local OCR.", err)
 
-        # Retry once with explicit json reminder
-        try:
-            retry_prompt = (
-                EXTRACTION_SYSTEM_PROMPT
-                + "\n\nCRITICAL: Your previous response could not be parsed as valid JSON. Output strictly valid JSON matching the schema, nothing else."
-            )
-            raw_response_retry = await asyncio.wait_for(
-                asyncio.to_thread(self._call_model, [media_part], retry_prompt),
-                timeout=AI_TIMEOUT_SECONDS,
-            )
-            validated = parse_and_validate_ai_json(raw_response_retry)
-            return validated.model_dump()
-        except Exception as retry_err:
-            logger.error("Gemini extraction retry also failed: %s", type(retry_err).__name__)
-            # Return empty editable template with doc_type Other so user can enter manually
-            fallback = EMPTY_EDITABLE_TEMPLATE.copy()
-            fallback["title"] = filename
-            fallback["raw_text"] = "AI could not parse this document automatically. Please fill in details manually."
-            return fallback
+        # Fallback to genuine local OCR extraction on the actual file
+        fallback_res = await self.local_fallback.extract_document(file_bytes, mime_type, filename)
+        fallback_res["provider"] = "local_ocr_fallback"
+        return fallback_res
 
     async def answer_question(
         self,
         question: str,
         documents: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
-        """Stub for Phase 4 Q&A search."""
-        return {
-            "answer": "Q&A search is configured for Phase 4.",
-            "sources": [],
-        }
+        """Answers natural language questions with local or gemini search."""
+        return await self.local_fallback.answer_question(question, documents)
